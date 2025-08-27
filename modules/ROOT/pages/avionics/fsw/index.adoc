@@ -26,7 +26,7 @@ image::OBC_Lollipop.png[OBC Lollipop Diagram, width=800]
 *Figure 1: OBC Application Diagram*
 
 * link:ADCS-manager-app.html[ADCS Manager Application] - Manages the Attitude Determination and Control System module
-* link:communication-manager-app.html[Communication Manager Application] - Primary interface to the CAN bus, handles message queuing and prioritization
+* link:communication-manager-app.html[Bus Communications Application] - Primary interface to the CAN bus, handles message queuing and prioritization
 * link:deployment-app.html[Deployment Application] - Sequences deployable actions and manages detumbling procedures
 * link:GPS-manager-app.html[GPS Position Manager Application] - Interfaces with GNSS receiver for position tracking
 * link:payload-manager-app.html[Payload Manager Application] - Tracks Payload Controller state and relays PAT sequence events
