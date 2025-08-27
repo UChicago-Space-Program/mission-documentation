@@ -1,8 +1,8 @@
-= Communication Manager Application
+= Bus Communications Application
 
 == Overview
 
-The Communication Manager Application serves as the primary interface to the CAN bus, preventing message collisions and handling queuing and prioritization. It operates on both OBC and Payload Controller.
+The Bus Communications Application serves as the primary interface to the CAN bus, preventing message collisions and handling queuing and prioritization. It operates on both OBC and Payload Controller.
 
 == Data Input
 
