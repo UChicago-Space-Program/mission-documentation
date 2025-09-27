@@ -10,9 +10,9 @@ The rest of this segment is based on the MATLAB script that captures scintillati
 image::Scint_Scimulation.png[Scintillation Simulation Diagram, width=600, align="center"]
 
 
-== Scintillation Index and Irradiance Fluctation Model
+== Scintillation Index and Irradiance Fluctuation Model
 
-The simulation's main objective is to calculate and model the scintillation index latexmath:[\sigma_I^2]. This is the normalized variance of the irradiance. The MATLAB script first determines a point scintillation index latexmath:[(\sigma_I^2)_p] for a single-transmitter path, which is considred the main basis for this simulation. The value latexmath:[(σ_{I,point}^2)] will be calculated using the Rytov variance and is generally considered valid across weak to strong turbulence conditions. 
+The simulation's main objective is to calculate and model the scintillation index latexmath:[\sigma_I^2]. This is the normalized variance of the irradiance. The MATLAB script first determines the point scintillation index, denoted as latexmath:[(\sigma_I^2)_p], for a single-transmitter path, which serves as the primary basis for this simulation. The value latexmath:[(σ_{I,point}^2)] will be calculated using the Rytov variance and is generally considered valid across weak to strong turbulence conditions. 
 
 [latexmath]
 ++++
@@ -32,7 +32,7 @@ Large-scale turbulence can be represented as slow and broad variations in the te
 
 == Model and Rytov Variance
 
-For an uplink beacon laser, a spherical wave model was considered, as it accurately represents a laser beam transmitted from a small ground source to a Low Earth Orbit (LEO) satellite. The beam starts at the ground and immediately has to face the densest part of Earth's atmosphere, where turbulence is at its peak. As the laser traverses to the satellite located in space (obviously), the atmospheric density decreases, as well as the effects of turbulence. In this case, the laser would experience strong divergence from the point source and propagate in all directions like a sphere. This logic could also be applied for justifying a plane-wave model for downlink simulations in which the order of turbulence is reversed. Then the laser beam would physically spread like a planar wave.
+For an uplink beacon laser, a spherical wave model was considered, as it accurately represents a laser beam transmitted from a small ground source to a Low Earth Orbit (LEO) satellite. The beam starts at the ground and immediately encounters the densest part of Earth's atmosphere, where turbulence is at its peak. As the laser traverses to the satellite located in space (obviously), the atmospheric density decreases, as well as the effects of turbulence. In this case, the laser would experience strong divergence from the point source and propagate in all directions like a sphere. This logic could also be applied for justifying a plane-wave model for downlink simulations in which the order of turbulence is reversed. Then the laser beam would physically spread like a planar wave.
 
 The Rytov variance latexmath:[(σ_2^2)] quantifies the strength of the atmospheric turbulence. For an uplink spherical wave, the Rytov variance was found using the Hufnagel-Valley (H-V) atmospheric model for the refractive-index structure parameter, latexmath:[C_n^2(h)], along with the entire path length: 
 
@@ -41,7 +41,7 @@ The Rytov variance latexmath:[(σ_2^2)] quantifies the strength of the atmospher
 C_n^2(h) = 0.00594 \left( \frac{v_{wind}}{27} \right)^2 (10^{-5}h)^{10} \exp \left( -\frac{h}{1000} \right) + 2.7 \times 10^{-16} \exp \left( -\frac{h}{1500} \right) + A_{ground} \exp \left( -\frac{h}{100} \right)
 ++++
 
-The Rytov variance itself is calculated using the integral of this model while being weighted by the spherical 
+The Rytov variance itself is calculated using the integral of this model, while being weighted by the spherical 
 
 [latexmath]
 ++++
@@ -57,7 +57,7 @@ where latexmath:[\mu_3] is the result of the integral:
 
 == Dealing with Transmitter Diversity
 
-The script also mainly focuses on reducing scintillation through transmitter diversity. Basically multiple separated transmitters create uncorrelated paths independent of each other will reduce overall scintillation. This is modeled by: 
+The script also mainly focuses on reducing scintillation through transmitter diversity. Basically, multiple separated transmitters create uncorrelated paths independent of each other, which will reduce overall scintillation. This is modeled by: 
 
 [latexmath]
 ++++
@@ -76,7 +76,7 @@ To apply averaging correctly with the Gamma-Gamma distribution, the MATLAB scrip
 β_{effective} = \frac{1}{σ_y^2 / M}
 ++++
 
-The script that use the altered parameters to generate the Gamma-Gamma distrbution with less irradiance based on the number of transmitter counts.
+The script that use the altered parameters to generate the Gamma-Gamma distribution with fewer irradiance based on the number of transmitter counts.
 
 == Simulated Scintillation
 
