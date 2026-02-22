@@ -1,54 +1,102 @@
 = cFS Software Bus
 
-== What is the Software Bus?
+== Software Bus Overview
 
 The Software Bus (SB) is an inter-application, message-based communication service in cFE. It decouples senders and receivers via publish/subscribe so applications can exchange packets without knowing each other’s location or implementation details.
 
 It supports one-to-one, one-to-many, and many-to-one routing. Multiple message types can be delivered to a single pipe (commonly for ground command processing).
 
-== Software Bus Terminology
 
-=== Messages
+```c
+	   +----------+                         +----------+
+       |  App A   |                         |  App B   |
+       +----|-----+                         +----^-----+
+            |                                    |
+            | (Push)                             | (Pull)
+            v                                    |
+   __________________________________________________________
+  |                                                          |
+  |  [ DATA PIPE ]  =====>  [ MESSAGE ]  =====>  [ DATA ]    |  <-- SOFTWARE BUS
+  |__________________________________________________________|
+            |                                    ^
+            |                                    |
+            +------------------------------------+
+                   (Asynchronous Flow)
+```
 
-Messages are self-contained data units identified by an abstract Message ID (MsgID). The Message API hides header details so applications remain portable across message-header implementations.
+== Creation
 
-=== Pipes
+- The ownership of ****a pipe is given to the app the creates it. This app has permissions to unsubscribe/subscribe/delete the pipe. Subscriptions are simply a mapping between a `MSGID` and a pipeID. The software bus will then route messages with ID `MSGID` to the subscribed pipe. Below all messages with `MID: SAMPLE_CMDID_1` will get routed to this pipe. It just so happens that the sample app will poll for messages on `SAMPLE_Pipe_1.`
 
-Pipes are per-application queues that hold incoming messages until read. Each pipe has a single reader, but an application may own multiple pipes.
+```c
+Status = CFE_SB_SubscribeEX(
+	SAMPLE_CMDID_1,               /* Msg Id to Receive */
+	SAMPLE_AppData.SAMPLE_Pipe_1, /* Pipe Msg is to be Rcvd on */
+	CFE_SB_DEFAULT_QOS,           /* Quality of Service */
+	SAMPLE_CMDID_1_LIMIT         /* Max Number to Queue */
+);
+Status = CFE_SB_SubscribeEX(
+	SAMPLE_CMDID_2,               /* Msg Id to Receive */
+	SAMPLE_AppData.SAMPLE_Pipe_1, /* Pipe Msg is to be Rcvd on */
+	CFE_SB_DEFAULT_QOS,           /* Quality of Service */
+	SAMPLE_CMDID_1_LIMIT         /* Max Number to Queue */
+);
+Status = CFE_SB_SubscribeEX(
+	SAMPLE_CMDID_1,               /* Msg Id to Receive */
+	SAMPLE_AppData.SAMPLE_Pipe_2, /* Pipe Msg is to be Rcvd on */
+	CFE_SB_DEFAULT_QOS,           /* Quality of Service */
+	SAMPLE_CMDID_1_LIMIT         /* Max Number to Queue */
+);
+```
 
-Read modes:
+- Implications are that multiple `MSGID`s can route to the same pipe, AND a single `MSGID` can be routed to multiple different pipes.
 
-* Poll (non-blocking)
-* Pend (blocking)
-* Pend with timeout
+== Sending Messages
 
-==== Message Limits and Flow Control
+```c
+typedef struct CFE_TBL_HousekeepingTlm
+{
+    CFE_MSG_TelemetryHeader_t         TelemetryHeader; /**< \brief Telemetry header */
+    CFE_TBL_HousekeepingTlm_Payload_t Payload;         /**< \brief Telemetry payload */
+} CFE_TBL_HousekeepingTlm_t;
 
-Limits help isolate slow consumers and protect system throughput:
+// ...
 
-* Pipe depth: maximum total messages allowed at a pipe (including in-process). If reached, further deliveries to that pipe are rejected (overflow).
-* Per-MsgID limit: maximum messages of a specific MsgID at a pipe. If reached, deliveries of that MsgID are rejected (overrun).
+void SendHousekeeping(void)
+{
+    CFE_TBL_HousekeepingTlm_t HkPacket;  /* stack allocation */
 
-Choose limits based on producer/consumer timing characteristics.
+    CFE_MSG_Init(CFE_MSG_PTR(HkPacket.TelemetryHeader),
+                 CFE_SB_ValueToMsgId(CFE_TBL_HK_TLM_MID),
+                 sizeof(HkPacket));
+    CFE_TBL_GetHkData();  /* would need to fill HkPacket, not global */
+    CFE_SB_TimeStampMsg(CFE_MSG_PTR(HkPacket.TelemetryHeader));
+    CFE_SB_TransmitMsg(CFE_MSG_PTR(HkPacket.TelemetryHeader), true);
+}
+```
 
-=== Routing
+**Important Detail:** `CFE_SB_TransmitMSG` copies the data into the SB’s own struct. So it’s completely find to create a local (stack) variable. This isn’t the case when using allocate_buffer().
 
-The SB looks up routes for a MsgID and delivers to all subscribed pipes.
+== Message IDs
 
-Routing implementations (SBR):
+- Must be globally unique
 
-* DIRECT: array indexed by MsgID (`CFE_PLATFORM_SB_HIGHEST_VALID_MSGID`) — simplest, larger memory footprint
-* HASH: hash map (`4 * CFE_PLATFORM_SB_MAX_MSG_IDS`) — smaller, manage collisions reported at subscribe
+=== Utility Commands:
 
-Missions may replace SBR with a custom router where warranted.
+- **CFE_SB_ValueToMsgId(integer)** — Turn an integer constant into the opaque CFE_SB_MsgId_t for SB APIs.
+- **CFE_SB_MsgIdToValue(msgid)** — Turn a MsgId back to an integer for switch or logging.
+- **CFE_SB_MsgId_Equal(a, b)** — Compare MsgIds without direct == on opaque types.
 
-==== Sending Applications
+== MID Conventions (Make sure they don’t conflict):
 
-Any application can send messages. Do not send from interrupt/exception handlers (SB may invoke blocking OS calls).
+1. **Commands:** 0x18xx (bit 12 set)
+2. **Telemetry:** 0x08xx (bit 11 set)
 
-==== Receiving Applications
+== Recommendations
 
-Any application can receive (not from interrupt/exception handlers). Messages arrive FIFO per pipe and remain accessible until the next receive call.
+- If you need data from another app, use the SB
+- Never directly modify Message Headers (there’s always a cFS one to use)
+- Every application needs at least one pipe (usually the CMD pipe).
 
 == The Software Bus (SB) and the Software Bus Network (SBN)
 
